@@ -228,12 +228,21 @@ def create_order_dataset(grid_df: pd.DataFrame) -> pd.DataFrame:
 def create_ping_and_driver_perf_dataset(grid_df: pd.DataFrame):
     assign_h3 = build_h3_assigner(grid_df)
 
-    start_hour_weights = np.array([
-        0.10, 0.08, 0.06, 0.05, 0.06, 0.16,
-        0.40, 0.55, 0.45, 0.28, 0.26, 0.30,
-        0.36, 0.38, 0.42, 0.54, 0.64, 0.60,
-        0.40, 0.24, 0.16, 0.12, 0.10, 0.08
+    peak_component = np.array([
+        0.18, 0.16, 0.14, 0.13, 0.15, 0.22,
+        0.34, 0.42, 0.36, 0.30, 0.28, 0.31,
+        0.35, 0.37, 0.39, 0.44, 0.50, 0.46,
+        0.34, 0.24, 0.18, 0.15, 0.13, 0.12
     ], dtype=float)
+
+    random_component = np.ones(24, dtype=float)
+
+    start_hour_weights = 0.7 * peak_component + 0.3 * random_component
+
+    noise = np.random.uniform(0.92, 1.08, size=24)
+    start_hour_weights = start_hour_weights * noise
+    tart_hour_weights = start_hour_weights / start_hour_weights.sum()
+
     start_minute_weights = np.repeat(start_hour_weights, 60)
     start_minute_weights = start_minute_weights / start_minute_weights.sum()
 
