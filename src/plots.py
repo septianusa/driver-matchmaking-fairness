@@ -51,12 +51,13 @@ def make_summary_plots(summary_df: pd.DataFrame, scenario_outputs: dict, outdir:
         lam_suffix = str(lam).replace(".", "_")
 
         plt.figure(figsize=(9, 4.8))
-        plt.plot(hourly["hour"], hourly["total_orders"], marker="o")
-        plt.plot(hourly["hour"], hourly["matched_orders"], marker="o")
+        plt.plot(hourly["hour"], hourly["total_orders"], marker="o", label="total orders")
+        plt.plot(hourly["hour"], hourly["matched_orders"], marker="o", label="matched orders")
         plt.xlabel("Hour")
         plt.ylabel("Count")
         plt.title(f"Orders vs Matches by Hour (lambda={lam})")
         plt.xticks(range(24))
+        plt.legend()
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
         plt.savefig(outdir / f"plot_hourly_orders_vs_matches_lambda_{lam_suffix}.png", dpi=180)
@@ -72,3 +73,18 @@ def make_summary_plots(summary_df: pd.DataFrame, scenario_outputs: dict, outdir:
         plt.tight_layout()
         plt.savefig(outdir / f"plot_income_distribution_lambda_{lam_suffix}.png", dpi=180)
         plt.close()
+
+
+def plot_driver_start_distribution(driver_start_dist: pd.DataFrame, outdir: Path) -> None:
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    plt.figure(figsize=(9, 4.8))
+    plt.plot(driver_start_dist["hour"], driver_start_dist["total_driver_start"], marker="o")
+    plt.xlabel("Hour")
+    plt.ylabel("Number of drivers starting online")
+    plt.title("Driver Start Online Distribution by Hour")
+    plt.xticks(range(24))
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(outdir / "plot_driver_start_distribution.png", dpi=180)
+    plt.close()

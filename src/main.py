@@ -9,7 +9,8 @@ from .config import (
     LAMBDA_SCENARIOS,
 )
 from .simulator import run_replay_simulation
-from .plots import make_summary_plots
+from .plots import make_summary_plots, plot_driver_start_distribution
+from .metrics import get_driver_start_distribution
 
 
 def main():
@@ -19,6 +20,11 @@ def main():
     ping_df = pd.read_csv(PING_FILE)
     driver_perf_df = pd.read_csv(DRIVER_PERF_FILE)
     grid_df = pd.read_csv(GRID_FILE)
+
+    # driver start distribution from ping_dataset
+    driver_start_dist = get_driver_start_distribution(ping_df)
+    driver_start_dist.to_csv(DATA_OUTPUT_DIR / "driver_start_distribution.csv", index=False)
+    plot_driver_start_distribution(driver_start_dist, DATA_OUTPUT_DIR)
 
     scenario_outputs = {}
     summary_rows = []
@@ -48,6 +54,9 @@ def main():
     make_summary_plots(summary_df, scenario_outputs, DATA_OUTPUT_DIR)
 
     print("\nFinished.")
+    print("\nDriver start distribution:")
+    print(driver_start_dist.to_string(index=False))
+    print("\nSimulation summary:")
     print(summary_df.to_string(index=False))
 
 

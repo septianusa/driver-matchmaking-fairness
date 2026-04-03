@@ -18,6 +18,26 @@ def gini(array_like) -> float:
     idx = np.arange(1, n + 1)
     return float(np.sum((2 * idx - n - 1) * x) / (n * np.sum(x)))
 
+def get_driver_start_distribution(ping_df: pd.DataFrame) -> pd.DataFrame:
+    driver_start = (
+        ping_df.groupby("driverId", as_index=False)
+        .agg(start_batch=("batchStep", "min"))
+    )
+
+    driver_start["hour"] = ((driver_start["start_batch"] - 1) // 60).astype(int)
+
+    driver_start_dist = (
+        driver_start.groupby("hour", as_index=False)
+        .agg(total_driver_start=("driverId", "count"))
+        .sort_values("hour")
+        .reset_index(drop=True)
+    )
+
+    all_hours = pd.DataFrame({"hour": list(range(24))})
+    driver_start_dist = all_hours.merge(driver_start_dist, on="hour", how="left")
+    driver_start_dist["total_driver_start"] = driver_start_dist["total_driver_start"].fillna(0).astype(int)
+
+    return driver_start_dist
 
 def build_summary_metrics(
     orders: pd.DataFrame,
