@@ -1,5 +1,6 @@
 # Driver Behaviour-Based Matchmaking to Improve Income Fairness in Ride-Hailing Platforms
 
+THIS SIMULATION IS IMPLEMENTING LEARNING-TO-DISPATCH THAT DEVELOPED BU DINGYUAN-SHI  https://github.com/dingyuan-shi/Learning-To-Dispatch
 ## Abstract
 
 This repository presents a simulation framework for evaluating driver behaviour-based matchmaking strategies in ride-hailing systems. The study focuses on improving income fairness among drivers while maintaining operational efficiency, such as high match rates and low pickup distances. The framework models spatial-temporal dynamics using synthetic demand and supply data, constructs candidate matches via graph-based search, and solves assignment using weighted bipartite matching.
