@@ -31,6 +31,7 @@ def run_replay_simulation(
     driver_perf_df: pd.DataFrame,
     grid_df: pd.DataFrame,
     lambda_driver_score: float,
+    use_grid=True
 ) -> dict:
     orders = order_df.copy()
     pings = ping_df.copy()
@@ -130,8 +131,12 @@ def run_replay_simulation(
                 if dist_ji > MAX_MATCH_DISTANCE_KM:
                     continue
 
-                value_origin = float(grid_value_map.get(o["h3Origin"], 1.0))
-                value_dest = float(grid_value_map.get(o["h3Destination"], 1.0))
+                if use_grid:
+                    value_origin = float(grid_value_map.get(o["h3Origin"], 1.0))
+                    value_dest = float(grid_value_map.get(o["h3Destination"], 1.0))
+                else:
+                    value_origin = 1.0
+                    value_dest = 1.0
 
                 utility_base = compute_utility_base(
                     fare=float(o["fare"]),
@@ -231,6 +236,7 @@ def run_replay_simulation(
 
             matched_records.append(m)
 
+        if use_grid:
             value_origin = float(grid_value_map.get(m["h3Origin"], 1.0))
             value_dest = float(grid_value_map.get(m["h3Destination"], 1.0))
             fare = float(m["fare"])

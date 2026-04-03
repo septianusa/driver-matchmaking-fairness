@@ -19,7 +19,8 @@ BETA_1 = 1.0
 BETA_2 = 2.0
 BETA_3 = 1.5
 
-LAMBDA_SCENARIOS = [0.0, 0.3, 0.6]
+LAMBDA_SCENARIOS = [0, 0.1, 0.2, 0.3]
+GRID_SCENARIOS = [True, False]
 
 ORDER_FILE = DATA_RAW_DIR / "order_dataset_surabaya_1day.csv"
 PING_FILE = DATA_RAW_DIR / "ping_dataset_surabaya_1day.csv"

@@ -7,6 +7,7 @@ from .config import (
     GRID_FILE,
     DATA_OUTPUT_DIR,
     LAMBDA_SCENARIOS,
+    GRID_SCENARIOS,
 )
 from .simulator import run_replay_simulation
 from .plots import make_summary_plots, plot_driver_start_distribution
@@ -29,27 +30,51 @@ def main():
     scenario_outputs = {}
     summary_rows = []
 
-    for lam in LAMBDA_SCENARIOS:
-        print(f"Running scenario lambda={lam} ...")
+    for use_grid in GRID_SCENARIOS:
+        for lam in LAMBDA_SCENARIOS:
+            print(f"Running scenario: use_grid={use_grid}, lambda={lam} ...")
 
-        result = run_replay_simulation(
-            order_df=order_df,
-            ping_df=ping_df,
-            driver_perf_df=driver_perf_df,
-            grid_df=grid_df,
-            lambda_driver_score=lam,
-        )
+            result = run_replay_simulation(
+                order_df=order_df,
+                ping_df=ping_df,
+                driver_perf_df=driver_perf_df,
+                grid_df=grid_df,
+                lambda_driver_score=lam,
+                use_grid=use_grid,
+            )
 
-        scenario_outputs[lam] = result
-        summary_rows.append(result["summary"])
+            grid_flag = "on" if use_grid else "off"
+            lam_suffix = str(lam).replace(".", "_")
 
-        lam_suffix = str(lam).replace(".", "_")
-        result["matchdataset"].to_csv(DATA_OUTPUT_DIR / f"matchdataset_lambda_{lam_suffix}.csv", index=False)
-        result["income_by_driver"].to_csv(DATA_OUTPUT_DIR / f"income_by_driver_lambda_{lam_suffix}.csv", index=False)
-        result["hourly_summary"].to_csv(DATA_OUTPUT_DIR / f"hourly_summary_lambda_{lam_suffix}.csv", index=False)
+            # unique key for plotting later
+            scenario_key = f"grid_{grid_flag}_lambda_{lam_suffix}"
+            scenario_outputs[scenario_key] = result
 
-    summary_df = pd.DataFrame(summary_rows).sort_values("lambda_driver_score").reset_index(drop=True)
-    summary_df.to_csv(DATA_OUTPUT_DIR / "simulation_summary_across_lambda.csv", index=False)
+            # add metadata into summary row
+            summary = result["summary"].copy()
+            summary["use_grid"] = use_grid
+            summary_rows.append(summary)
+
+            # save outputs with distinct filenames
+            result["matchdataset"].to_csv(
+                DATA_OUTPUT_DIR / f"matchdataset_grid_{grid_flag}_lambda_{lam_suffix}.csv",
+                index=False,
+            )
+            result["income_by_driver"].to_csv(
+                DATA_OUTPUT_DIR / f"income_by_driver_grid_{grid_flag}_lambda_{lam_suffix}.csv",
+                index=False,
+            )
+            result["hourly_summary"].to_csv(
+                DATA_OUTPUT_DIR / f"hourly_summary_grid_{grid_flag}_lambda_{lam_suffix}.csv",
+                index=False,
+            )
+
+    summary_df = (
+        pd.DataFrame(summary_rows)
+        .sort_values(["use_grid", "lambda_driver_score"])
+        .reset_index(drop=True)
+    )
+    summary_df.to_csv(DATA_OUTPUT_DIR / "simulation_summary_across_lambda_and_grid.csv", index=False)
 
     make_summary_plots(summary_df, scenario_outputs, DATA_OUTPUT_DIR)
 
