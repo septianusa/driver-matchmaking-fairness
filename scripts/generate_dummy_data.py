@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 from scipy.spatial import cKDTree
 
-
 # =========================================================
 # CONFIG
 # =========================================================
@@ -14,9 +13,14 @@ RANDOM_SEED = 42
 np.random.seed(RANDOM_SEED)
 random.seed(RANDOM_SEED)
 
-TOTAL_BATCH = 1440
-TOTAL_DEMAND = 100000
-TOTAL_DRIVERS = 14000
+TOTAL_DAY = 2
+TOTAL_BATCH_PER_DAY = 1440
+TOTAL_BATCH = TOTAL_DAY * TOTAL_BATCH_PER_DAY
+
+TOTAL_DEMAND_PER_DAY = 10000
+TOTAL_DEMAND = TOTAL_DAY * TOTAL_DEMAND_PER_DAY
+
+TOTAL_DRIVERS = 3000
 
 CENTER_LAT = -7.2575
 CENTER_LON = 112.7521
@@ -27,7 +31,6 @@ LON_MIN, LON_MAX = 112.60, 112.90
 
 OUTDIR = Path(__file__).resolve().parent.parent / "data" / "raw"
 OUTDIR.mkdir(parents=True, exist_ok=True)
-
 
 # =========================================================
 # HELPERS
@@ -42,7 +45,11 @@ def haversine_km(lat1, lon1, lat2, lon2):
 
 
 def batch_to_hour(batch_step: int) -> int:
-    return (batch_step - 1) // 60
+    return ((batch_step - 1) % TOTAL_BATCH_PER_DAY) // 60
+
+
+def batch_to_day(batch_step: int) -> int:
+    return ((batch_step - 1) // TOTAL_BATCH_PER_DAY) + 1
 
 
 def sample_point_around(lat, lon, sd_km=1.2):
@@ -100,7 +107,6 @@ def choose_hotspot(hour: int, origin: bool = True):
     idx = np.random.choice(len(pool), p=probs)
     return pool[idx]
 
-
 # =========================================================
 # H3-LIKE GRID
 # =========================================================
@@ -146,7 +152,6 @@ def build_h3_assigner(grid_df: pd.DataFrame):
 
     return assign
 
-
 # =========================================================
 # GENERATORS
 # =========================================================
@@ -158,7 +163,10 @@ def create_order_dataset(grid_df: pd.DataFrame) -> pd.DataFrame:
         0.82, 0.68, 0.56, 0.44, 0.32, 0.24
     ], dtype=float)
 
-    minute_weights = np.repeat(hourly_weights, 60)
+    minute_weights_day = np.repeat(hourly_weights, 60)
+    minute_weights_day = minute_weights_day / minute_weights_day.sum()
+
+    minute_weights = np.tile(minute_weights_day, TOTAL_DAY)
     minute_weights = minute_weights / minute_weights.sum()
 
     order_batches = np.random.choice(
@@ -175,8 +183,16 @@ def create_order_dataset(grid_df: pd.DataFrame) -> pd.DataFrame:
         _, o_lat_center, o_lon_center, _ = choose_hotspot(hour, origin=True)
         _, d_lat_center, d_lon_center, _ = choose_hotspot(hour, origin=False)
 
-        o_lat, o_lon = sample_point_around(o_lat_center, o_lon_center, sd_km=np.random.uniform(0.5, 2.0))
-        d_lat, d_lon = sample_point_around(d_lat_center, d_lon_center, sd_km=np.random.uniform(0.5, 2.2))
+        o_lat, o_lon = sample_point_around(
+            o_lat_center,
+            o_lon_center,
+            sd_km=np.random.uniform(0.5, 2.0),
+        )
+        d_lat, d_lon = sample_point_around(
+            d_lat_center,
+            d_lon_center,
+            sd_km=np.random.uniform(0.5, 2.2),
+        )
 
         trip_km = float(haversine_km(o_lat, o_lon, d_lat, d_lon))
         fare = round(7000 + trip_km * 2200 + np.random.uniform(0, 4000), 2)
@@ -197,6 +213,8 @@ def create_order_dataset(grid_df: pd.DataFrame) -> pd.DataFrame:
         )
 
     order_df = pd.DataFrame(rows)
+    order_df["simulation_day"] = order_df["batchStep"].apply(batch_to_day)
+
     assign_h3 = build_h3_assigner(grid_df)
 
     order_df["h3Origin"], _ = assign_h3(
@@ -221,6 +239,7 @@ def create_order_dataset(grid_df: pd.DataFrame) -> pd.DataFrame:
             "fare",
             "estimatedTimeArrivalInBatch",
             "batchStep",
+            "simulation_day",
         ]
     ].sort_values(["batchStep", "orderId"]).reset_index(drop=True)
 
@@ -241,28 +260,44 @@ def create_ping_and_driver_perf_dataset(grid_df: pd.DataFrame):
 
     noise = np.random.uniform(0.92, 1.08, size=24)
     start_hour_weights = start_hour_weights * noise
-    tart_hour_weights = start_hour_weights / start_hour_weights.sum()
+    start_hour_weights = start_hour_weights / start_hour_weights.sum()
 
-    start_minute_weights = np.repeat(start_hour_weights, 60)
+    start_minute_weights_day = np.repeat(start_hour_weights, 60)
+    start_minute_weights_day = start_minute_weights_day / start_minute_weights_day.sum()
+
+    start_minute_weights = np.tile(start_minute_weights_day, TOTAL_DAY)
     start_minute_weights = start_minute_weights / start_minute_weights.sum()
 
     ping_chunks = []
     perf_rows = []
 
     for driver_id in range(1, TOTAL_DRIVERS + 1):
-        start_batch = int(np.random.choice(np.arange(1, TOTAL_BATCH + 1), p=start_minute_weights))
+        start_batch = int(
+            np.random.choice(
+                np.arange(1, TOTAL_BATCH + 1),
+                p=start_minute_weights,
+            )
+        )
         shift_length = int(np.clip(np.random.normal(300, 75), 120, 480))
         end_batch = min(TOTAL_BATCH, start_batch + shift_length - 1)
 
         start_hour = batch_to_hour(start_batch)
         _, lat_center, lon_center, _ = choose_hotspot(start_hour, origin=True)
-        lat0, lon0 = sample_point_around(lat_center, lon_center, sd_km=np.random.uniform(0.4, 1.5))
+        lat0, lon0 = sample_point_around(
+            lat_center,
+            lon_center,
+            sd_km=np.random.uniform(0.4, 1.5),
+        )
 
         n = end_batch - start_batch + 1
         batches = np.arange(start_batch, end_batch + 1)
 
         lat_steps = np.random.normal(0, 0.12 / 111.0, size=n)
-        lon_steps = np.random.normal(0, 0.12 / (111.0 * math.cos(math.radians(CENTER_LAT))), size=n)
+        lon_steps = np.random.normal(
+            0,
+            0.12 / (111.0 * math.cos(math.radians(CENTER_LAT))),
+            size=n,
+        )
 
         lat_path = np.clip(lat0 + np.cumsum(lat_steps), LAT_MIN, LAT_MAX)
         lon_path = np.clip(lon0 + np.cumsum(lon_steps), LON_MIN, LON_MAX)
@@ -301,11 +336,16 @@ def create_ping_and_driver_perf_dataset(grid_df: pd.DataFrame):
             }
         )
 
-    ping_df = pd.concat(ping_chunks, ignore_index=True).sort_values(["batchStep", "driverId"]).reset_index(drop=True)
+    ping_df = (
+        pd.concat(ping_chunks, ignore_index=True)
+        .sort_values(["batchStep", "driverId"])
+        .reset_index(drop=True)
+    )
+    ping_df["simulation_day"] = ping_df["batchStep"].apply(batch_to_day)
+
     perf_df = pd.DataFrame(perf_rows).sort_values("driverId").reset_index(drop=True)
 
     return ping_df, perf_df
-
 
 # =========================================================
 # MAIN
@@ -320,10 +360,10 @@ def main():
     print("Generating ping_dataset and driverPerformance_dataset ...")
     ping_df, perf_df = create_ping_and_driver_perf_dataset(grid_df)
 
-    order_file = OUTDIR / "order_dataset_surabaya_1day.csv"
-    ping_file = OUTDIR / "ping_dataset_surabaya_1day.csv"
-    perf_file = OUTDIR / "driverPerformance_dataset_surabaya_1day.csv"
-    grid_file = OUTDIR / "h3GridValue_dataset_surabaya_1day.csv"
+    order_file = OUTDIR / "order_dataset_surabaya_14day.csv"
+    ping_file = OUTDIR / "ping_dataset_surabaya_14day.csv"
+    perf_file = OUTDIR / "driverPerformance_dataset_surabaya_14day.csv"
+    grid_file = OUTDIR / "h3GridValue_dataset_surabaya_14day.csv"
 
     order_df.to_csv(order_file, index=False)
     ping_df.to_csv(ping_file, index=False)

@@ -62,6 +62,11 @@ def run_replay_simulation(
     expired_records = []
 
     for t in range(1, TOTAL_BATCH + 1):
+        # progress every 5%
+        if t % (TOTAL_BATCH // 20) == 0:
+            pct = (t / TOTAL_BATCH) * 100
+            print(f"  Processing batch {t} / {TOTAL_BATCH} ({pct:.1f}%)")
+
         active_orders = orders[
             (orders["isMatched"] == False)
             & (orders["batchStep"] <= t)
@@ -249,6 +254,12 @@ def run_replay_simulation(
     match_df = pd.DataFrame(matched_records)
     expired_df = pd.DataFrame(expired_records)
 
+    if not orders.empty:
+        orders["simulation_day"] = ((orders["batchStep"] - 1) // 1440) + 1
+
+    if not match_df.empty:
+        match_df["simulation_day"] = ((match_df["batchStep"] - 1) // 1440) + 1
+
     summary, income_by_driver, hourly_summary = build_summary_metrics(
         orders=orders,
         match_df=match_df,
@@ -256,11 +267,70 @@ def run_replay_simulation(
         lambda_driver_score=lambda_driver_score,
     )
 
+    # daily utility
+    if not match_df.empty:
+        daily_utility = (
+            match_df.groupby("simulation_day", as_index=False)
+            .agg(total_utility=("utilityBase", "sum"))
+        )
+    else:
+        daily_utility = pd.DataFrame(columns=["simulation_day", "total_utility"])
+
+    # daily conversion
+    daily_orders = (
+        orders.groupby("simulation_day", as_index=False)
+        .agg(total_orders=("orderId", "count"))
+    )
+
+    daily_matched = (
+        orders[orders["isMatched"] == True]
+        .groupby("simulation_day", as_index=False)
+        .agg(total_matched=("orderId", "count"))
+    )
+
+    daily_conversion = daily_orders.merge(daily_matched, on="simulation_day", how="left")
+    daily_conversion["total_matched"] = daily_conversion["total_matched"].fillna(0)
+    daily_conversion["conversion_rate"] = daily_conversion["total_matched"] / daily_conversion["total_orders"]
+
+    # daily pickup distance
+    if not match_df.empty:
+        daily_pickup = (
+            match_df.groupby("simulation_day", as_index=False)
+            .agg(avg_pickup_distance=("distance_ji_km", "mean"))
+        )
+    else:
+        daily_pickup = pd.DataFrame(columns=["simulation_day", "avg_pickup_distance"])
+
+    # daily correlation income vs score
+    if not match_df.empty:
+        daily_driver_income = (
+            match_df.groupby(["simulation_day", "driverId"], as_index=False)
+            .agg(total_income=("fare", "sum"))
+        )
+
+        daily_driver_income = daily_driver_income.merge(
+            driver_perf[["driverId", "driverScore"]],
+            on="driverId",
+            how="left"
+        )
+
+        daily_corr = (
+            daily_driver_income.groupby("simulation_day")
+            .apply(lambda x: x["total_income"].corr(x["driverScore"]))
+            .reset_index(name="corr_income_score")
+        )
+    else:
+        daily_corr = pd.DataFrame(columns=["simulation_day", "corr_income_score"])
+
     return {
         "matchdataset": match_df,
         "order_dataset_final": orders,
         "expired_orders": expired_df,
         "income_by_driver": income_by_driver,
         "hourly_summary": hourly_summary,
+        "daily_utility": daily_utility,
+        "daily_conversion": daily_conversion,
+        "daily_pickup": daily_pickup,
+        "daily_corr_income_score": daily_corr,
         "summary": summary,
     }

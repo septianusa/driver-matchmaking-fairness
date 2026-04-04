@@ -2,7 +2,36 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
+def plot_daily_metric_comparison(daily_metric_dict, metric_col, ylabel, title, output_path):
+    import matplotlib.pyplot as plt
 
+    plt.figure(figsize=(6.5, 4.2))
+
+    for scenario_name, df in daily_metric_dict.items():
+        if df.empty:
+            continue
+
+        use_grid = "grid_on" in scenario_name
+        linestyle = "-" if use_grid else "--"
+
+        plt.plot(
+            df["simulation_day"],
+            df[metric_col],
+            marker="o",
+            linestyle=linestyle,
+            label=scenario_name.replace("_", " ")
+        )
+
+    plt.xlabel("Day")
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.xticks(range(1, 15))
+    plt.grid(True, linestyle="--", alpha=0.4)
+    plt.legend(fontsize=8)
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=200)
+    plt.close()
+    
 def make_summary_plots(summary_df: pd.DataFrame, scenario_outputs: dict, outdir: Path) -> None:
     outdir.mkdir(parents=True, exist_ok=True)
 
