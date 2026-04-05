@@ -70,6 +70,10 @@ def main():
                 DATA_OUTPUT_DIR / f"matchdataset_grid_{grid_flag}_lambda_{lam_suffix}.csv",
                 index=False,
             )
+            result["order_dataset_final"].to_csv(
+                DATA_OUTPUT_DIR / f"order_dataset_final_grid_{grid_flag}_lambda_{lam_suffix}.csv",
+                index=False,
+            )
             result["income_by_driver"].to_csv(
                 DATA_OUTPUT_DIR / f"income_by_driver_grid_{grid_flag}_lambda_{lam_suffix}.csv",
                 index=False,
