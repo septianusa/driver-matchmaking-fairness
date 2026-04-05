@@ -13,7 +13,7 @@ RANDOM_SEED = 42
 np.random.seed(RANDOM_SEED)
 random.seed(RANDOM_SEED)
 
-TOTAL_DAY = 2
+TOTAL_DAY = 1
 TOTAL_BATCH_PER_DAY = 1440
 TOTAL_BATCH = TOTAL_DAY * TOTAL_BATCH_PER_DAY
 
@@ -31,6 +31,7 @@ LON_MIN, LON_MAX = 112.60, 112.90
 
 OUTDIR = Path(__file__).resolve().parent.parent / "data" / "raw"
 OUTDIR.mkdir(parents=True, exist_ok=True)
+
 
 # =========================================================
 # HELPERS
@@ -107,6 +108,7 @@ def choose_hotspot(hour: int, origin: bool = True):
     idx = np.random.choice(len(pool), p=probs)
     return pool[idx]
 
+
 # =========================================================
 # H3-LIKE GRID
 # =========================================================
@@ -152,21 +154,41 @@ def build_h3_assigner(grid_df: pd.DataFrame):
 
     return assign
 
+
 # =========================================================
 # GENERATORS
 # =========================================================
 def create_order_dataset(grid_df: pd.DataFrame) -> pd.DataFrame:
-    hourly_weights = np.array([
+    hourly_weights_weekday = np.array([
         0.18, 0.14, 0.11, 0.10, 0.14, 0.30,
         0.62, 0.96, 0.84, 0.58, 0.52, 0.56,
         0.64, 0.70, 0.76, 0.86, 1.00, 0.96,
         0.82, 0.68, 0.56, 0.44, 0.32, 0.24
     ], dtype=float)
 
-    minute_weights_day = np.repeat(hourly_weights, 60)
-    minute_weights_day = minute_weights_day / minute_weights_day.sum()
+    hourly_weights_weekend = np.array([
+        0.20, 0.18, 0.16, 0.14, 0.16, 0.22,
+        0.30, 0.42, 0.50, 0.56, 0.60, 0.62,
+        0.66, 0.70, 0.74, 0.80, 0.88, 0.92,
+        0.86, 0.72, 0.58, 0.46, 0.34, 0.26
+    ], dtype=float)
 
-    minute_weights = np.tile(minute_weights_day, TOTAL_DAY)
+    minute_weight_blocks = []
+
+    for day in range(1, TOTAL_DAY + 1):
+        is_weekend = day in [6, 7, 13, 14]
+        base_weights = hourly_weights_weekend.copy() if is_weekend else hourly_weights_weekday.copy()
+
+        day_noise = np.random.uniform(0.92, 1.08, size=24)
+        daily_hourly_weights = base_weights * day_noise
+        daily_hourly_weights = daily_hourly_weights / daily_hourly_weights.sum()
+
+        minute_weights_day = np.repeat(daily_hourly_weights, 60)
+        minute_weights_day = minute_weights_day / minute_weights_day.sum()
+
+        minute_weight_blocks.append(minute_weights_day)
+
+    minute_weights = np.concatenate(minute_weight_blocks)
     minute_weights = minute_weights / minute_weights.sum()
 
     order_batches = np.random.choice(
@@ -256,29 +278,73 @@ def create_ping_and_driver_perf_dataset(grid_df: pd.DataFrame):
 
     random_component = np.ones(24, dtype=float)
 
-    start_hour_weights = 0.7 * peak_component + 0.3 * random_component
+    start_weight_blocks = []
 
-    noise = np.random.uniform(0.92, 1.08, size=24)
-    start_hour_weights = start_hour_weights * noise
-    start_hour_weights = start_hour_weights / start_hour_weights.sum()
+    for day in range(1, TOTAL_DAY + 1):
+        is_weekend = day in [6, 7, 13, 14]
 
-    start_minute_weights_day = np.repeat(start_hour_weights, 60)
-    start_minute_weights_day = start_minute_weights_day / start_minute_weights_day.sum()
+        if is_weekend:
+            weekend_adjustment = np.array([
+                1.10, 1.08, 1.06, 1.04, 1.02, 0.98,
+                0.95, 0.92, 0.95, 1.00, 1.02, 1.05,
+                1.08, 1.10, 1.12, 1.14, 1.12, 1.10,
+                1.05, 1.02, 1.00, 0.98, 0.96, 0.94
+            ], dtype=float)
+            day_base = peak_component * weekend_adjustment
+        else:
+            day_base = peak_component.copy()
 
-    start_minute_weights = np.tile(start_minute_weights_day, TOTAL_DAY)
+        start_hour_weights = 0.7 * day_base + 0.3 * random_component
+
+        noise = np.random.uniform(0.92, 1.08, size=24)
+        start_hour_weights = start_hour_weights * noise
+        start_hour_weights = start_hour_weights / start_hour_weights.sum()
+
+        start_minute_weights_day = np.repeat(start_hour_weights, 60)
+        start_minute_weights_day = start_minute_weights_day / start_minute_weights_day.sum()
+
+        start_weight_blocks.append(start_minute_weights_day)
+
+    start_minute_weights = np.concatenate(start_weight_blocks)
     start_minute_weights = start_minute_weights / start_minute_weights.sum()
 
     ping_chunks = []
     perf_rows = []
 
-    for driver_id in range(1, TOTAL_DRIVERS + 1):
+    n_hqd = int(round(TOTAL_DRIVERS * 0.20))
+    n_mqd = int(round(TOTAL_DRIVERS * 0.30))
+    n_lqd = TOTAL_DRIVERS - n_hqd - n_mqd
+
+    quality_labels = (
+        ["HQD"] * n_hqd
+        + ["MQD"] * n_mqd
+        + ["LQD"] * n_lqd
+    )
+    random.shuffle(quality_labels)
+
+    for driver_id, quality_group in zip(range(1, TOTAL_DRIVERS + 1), quality_labels):
         start_batch = int(
             np.random.choice(
                 np.arange(1, TOTAL_BATCH + 1),
                 p=start_minute_weights,
             )
         )
-        shift_length = int(np.clip(np.random.normal(300, 75), 120, 480))
+
+        if quality_group == "HQD":
+            shift_length = int(np.clip(np.random.normal(420, 35), 300, 480))
+            acceptance_rate = np.random.uniform(0.90, 0.98)
+            completion_rate = np.random.uniform(0.90, 0.99)
+
+        elif quality_group == "MQD":
+            shift_length = int(np.clip(np.random.normal(270, 45), 180, 360))
+            acceptance_rate = np.random.uniform(0.70, 0.88)
+            completion_rate = np.random.uniform(0.70, 0.88)
+
+        else:  # LQD
+            shift_length = int(np.clip(np.random.normal(120, 30), 60, 220))
+            acceptance_rate = np.random.uniform(0.40, 0.70)
+            completion_rate = np.random.uniform(0.40, 0.70)
+
         end_batch = min(TOTAL_BATCH, start_batch + shift_length - 1)
 
         start_hour = batch_to_hour(start_batch)
@@ -316,23 +382,21 @@ def create_ping_and_driver_perf_dataset(grid_df: pd.DataFrame):
             )
         )
 
-        acceptance_rate = round(np.random.uniform(0.70, 0.98), 4)
-        completion_rate = round(np.random.uniform(0.75, 0.99), 4)
-        online_duration_hour = round(n / 60.0, 2)
-        driver_score = round(
+        online_duration_hour = n / 60.0
+        driver_score = (
             acceptance_rate / 3.0
             + completion_rate / 3.0
-            + (min(online_duration_hour, 40.0) / 40.0) / 3.0,
-            6,
+            + (min(online_duration_hour, 40.0) / 40.0) / 3.0
         )
 
         perf_rows.append(
             {
                 "driverId": driver_id,
-                "acceptanceRate": acceptance_rate,
-                "completionRate": completion_rate,
-                "onlineDurationHour": online_duration_hour,
-                "driverScore": driver_score,
+                "acceptanceRate": round(acceptance_rate, 4),
+                "completionRate": round(completion_rate, 4),
+                "onlineDurationHour": round(online_duration_hour, 2),
+                "driverScore": round(driver_score, 6),
+                "driverQualityGroup": quality_group,
             }
         )
 
@@ -345,7 +409,14 @@ def create_ping_and_driver_perf_dataset(grid_df: pd.DataFrame):
 
     perf_df = pd.DataFrame(perf_rows).sort_values("driverId").reset_index(drop=True)
 
+    perf_df["driverScoreBucket"] = pd.cut(
+        perf_df["driverScore"],
+        bins=[-1, 0.6, 0.8, 1.0],
+        labels=["LQD", "MQD", "HQD"],
+    )
+
     return ping_df, perf_df
+
 
 # =========================================================
 # MAIN
@@ -381,6 +452,15 @@ def main():
     print(f"ping rows    : {len(ping_df):,}")
     print(f"driver rows  : {len(perf_df):,}")
     print(f"grid rows    : {len(grid_df):,}")
+
+    print("\nAssigned driver quality distribution:")
+    print(perf_df["driverQualityGroup"].value_counts(dropna=False).to_string())
+
+    print("\nRealized driver score bucket distribution:")
+    print(perf_df["driverScoreBucket"].value_counts(dropna=False).to_string())
+
+    print("\nDriver score summary:")
+    print(perf_df["driverScore"].describe().to_string())
 
 
 if __name__ == "__main__":

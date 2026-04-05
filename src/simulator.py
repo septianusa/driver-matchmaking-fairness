@@ -163,9 +163,11 @@ def run_replay_simulation(
 
                 driver_score = float(perf["driverScore"])
 
-                weight = (
-                    utility_base * (1 - lambda_driver_score) * (1 - cancel_probability)
-                    + (lambda_driver_score * driver_score * utility_base)
+                effective_utility = utility_base * (1 - cancel_probability)
+
+                weight = effective_utility * (
+                    (1 - lambda_driver_score)
+                    + lambda_driver_score * driver_score
                 )
 
                 candidates.append(
