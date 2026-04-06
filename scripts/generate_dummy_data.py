@@ -13,14 +13,14 @@ RANDOM_SEED = 42
 np.random.seed(RANDOM_SEED)
 random.seed(RANDOM_SEED)
 
-TOTAL_DAY = 2
+TOTAL_DAY = 1
 TOTAL_BATCH_PER_DAY = 1440
 TOTAL_BATCH = TOTAL_DAY * TOTAL_BATCH_PER_DAY
 
 TOTAL_DEMAND_PER_DAY = 10000
 TOTAL_DEMAND = TOTAL_DAY * TOTAL_DEMAND_PER_DAY
 
-TOTAL_DRIVERS = 3000
+TOTAL_DRIVERS = 1000
 
 CENTER_LAT = -7.2575
 CENTER_LON = 112.7521
@@ -386,7 +386,7 @@ def create_ping_and_driver_perf_dataset(grid_df: pd.DataFrame):
         driver_score = (
             acceptance_rate / 3.0
             + completion_rate / 3.0
-            + (min(online_duration_hour, 40.0) / 40.0) / 3.0
+            + (min(online_duration_hour, 8.0) / 8.0) / 3.0
         )
 
         perf_rows.append(
