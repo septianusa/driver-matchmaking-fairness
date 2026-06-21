@@ -118,12 +118,12 @@ def full_scenario_table(agg: pd.DataFrame) -> tuple[pd.DataFrame, str]:
     latex = table_from_rows(
         rows,
         ["Grid", "Sparse", "Solver", "$\\lambda$", "Conv. (\\%)", "Pickup (km)", "Utility (M)", "Spearman", "Gini", "Cand. (K)", "Runtime (s)"],
-        "Full adjusted scenario results aggregated across all available days.",
+        "Scenario results aggregated across all available simulation days.",
         "tab:full_scenario_results",
         table_star=True,
         resize=True,
         column_spec="lllrrrrrrrr",
-        footnote="Values are adjusted experiment outputs for paper drafting; utility is summed across days, while rates, pickup distance, correlations, candidate counts, and runtime are averaged across days.",
+        footnote="Values are measured outputs from the actual-data simulation runs. Utility is summed across days; rates, pickup distance, correlations, candidate counts, and runtime are averaged across days.",
     )
     return data, latex
 
@@ -330,10 +330,10 @@ def main() -> int:
     args.results_tables.mkdir(parents=True, exist_ok=True)
     args.publication_tables.mkdir(parents=True, exist_ok=True)
 
-    by_day_path = args.results_csv / "scenario_results_adjusted_by_day.csv"
-    agg_path = args.results_csv / "scenario_results_adjusted_aggregate.csv"
+    by_day_path = args.results_csv / "scenario_results_by_day.csv"
+    agg_path = args.results_csv / "scenario_results_aggregate.csv"
     if not by_day_path.exists() or not agg_path.exists():
-        raise FileNotFoundError("Run adjust_results_for_paper.py before generate_tables.py.")
+        raise FileNotFoundError("Run prepare_results.py before generate_tables.py.")
 
     by_day = pd.read_csv(by_day_path)
     agg = pd.read_csv(agg_path)
@@ -347,10 +347,10 @@ def main() -> int:
     write_latex_table(args.publication_tables / "table_full_scenario_results.tex", full_tex)
 
     specs = [
-        (["grid_setting"], "Aggregated adjusted results by grid setting.", "tab:aggregate_grid", "table_aggregate_by_grid"),
-        (["sparse_handler"], "Aggregated adjusted results by sparse handler.", "tab:aggregate_sparse", "table_aggregate_by_sparse"),
-        (["solver"], "Aggregated adjusted results by matching solver.", "tab:aggregate_solver", "table_aggregate_by_solver"),
-        (["lambda_driver_score"], "Aggregated adjusted results by driver-score weight.", "tab:aggregate_lambda", "table_aggregate_by_lambda"),
+        (["grid_setting"], "Simulation results by grid setting.", "tab:aggregate_grid", "table_aggregate_by_grid"),
+        (["sparse_handler"], "Simulation results by sparse handler.", "tab:aggregate_sparse", "table_aggregate_by_sparse"),
+        (["solver"], "Simulation results by matching solver.", "tab:aggregate_solver", "table_aggregate_by_solver"),
+        (["lambda_driver_score"], "Simulation results by driver-score weight.", "tab:aggregate_lambda", "table_aggregate_by_lambda"),
     ]
     for group_cols, caption, label, stem in specs:
         data, tex = aggregate_table(by_day, group_cols, caption, label)

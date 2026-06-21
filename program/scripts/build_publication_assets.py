@@ -10,7 +10,6 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 
 PIPELINE = [
     "prepare_results.py",
-    "adjust_results_for_paper.py",
     "generate_tables.py",
     "generate_figures.py",
 ]
@@ -27,4 +26,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

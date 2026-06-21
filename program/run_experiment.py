@@ -12,7 +12,6 @@ SCRIPTS = ROOT / "scripts"
 
 COMMANDS = {
     "prepare": ["prepare_results.py"],
-    "adjust": ["adjust_results_for_paper.py"],
     "tables": ["generate_tables.py"],
     "figures": ["generate_figures.py"],
     "assets": ["build_publication_assets.py"],
@@ -40,4 +39,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

@@ -149,7 +149,7 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     out["sparse_handler"] = out["sparse_method"].map(normalize_sparse)
     out["solver"] = out["matching_algorithm"].str.lower()
     out["lambda_driver_score"] = out["lambda_driver_score"].astype(float).round(3)
-    out["result_status"] = "unadjusted_simulation_output"
+    out["result_status"] = "actual_data_simulation_output"
     for col in OUTPUT_COLUMNS:
         if col not in out.columns:
             out[col] = pd.NA
@@ -184,6 +184,38 @@ def build_coverage(df: pd.DataFrame) -> pd.DataFrame:
     return coverage
 
 
+def aggregate_by_scenario(df: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate measured scenario-day outputs without modifying run values."""
+    dims = ["grid_setting", "sparse_handler", "solver", "lambda_driver_score"]
+    grouped = df.groupby(dims, dropna=False)
+    agg = grouped.agg(
+        days=("day", "nunique"),
+        orders_total=("number_of_orders", "sum"),
+        active_drivers_mean=("number_of_unique_drivers", "mean"),
+        raw_pairs_total=("raw_pairs", "sum"),
+        candidate_pairs_mean=("candidate_pairs", "mean"),
+        candidate_pairs_total=("candidate_pairs", "sum"),
+        match_rate=("match_rate", "mean"),
+        expected_conversion_rate=("expected_conversion_rate", "mean"),
+        pickup_distance_km=("pickup_distance_km", "mean"),
+        mean_pickup_distance_km=("mean_pickup_distance_km", "mean"),
+        utility_total=("utility", "sum"),
+        utility_mean=("utility", "mean"),
+        spearman_correlation=("spearman_correlation", "mean"),
+        pearson_correlation=("pearson_correlation", "mean"),
+        gini_coefficient=("gini_coefficient", "mean"),
+        runtime_seconds=("runtime_seconds", "mean"),
+        solver_runtime_seconds=("solver_runtime_seconds", "mean"),
+        candidate_generation_runtime_seconds=("candidate_generation_runtime_seconds", "mean"),
+        candidate_reduction_pct=("candidate_reduction_pct", "mean"),
+        sparsity_ratio=("sparsity_ratio", "mean"),
+    ).reset_index()
+    agg["result_status"] = "actual_data_simulation_output"
+    return agg.sort_values(
+        ["grid_setting", "solver", "sparse_handler", "lambda_driver_score"]
+    ).reset_index(drop=True)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Normalize current dispatch experiment summaries.")
     parser.add_argument("--source-repo", type=Path, default=DEFAULT_SOURCE_REPO)
@@ -192,26 +224,38 @@ def main() -> int:
 
     args.results_csv.mkdir(parents=True, exist_ok=True)
     raw, manifest = read_source_runs(args.source_repo)
-    prepared = normalize_columns(raw)
-    coverage = build_coverage(prepared)
+    by_day = normalize_columns(raw)
+    aggregate = aggregate_by_scenario(by_day)
+    coverage = build_coverage(by_day)
 
     raw.to_csv(args.results_csv / "scenario_results_raw_merged.csv", index=False)
-    prepared.to_csv(args.results_csv / "scenario_results_prepared.csv", index=False)
+    by_day.to_csv(args.results_csv / "scenario_results_by_day.csv", index=False)
+    aggregate.to_csv(args.results_csv / "scenario_results_aggregate.csv", index=False)
     coverage.to_csv(args.results_csv / "scenario_coverage_check.csv", index=False)
     pd.DataFrame(manifest).to_csv(args.results_csv / "source_manifest.csv", index=False)
 
     summary = {
         "source_repo": str(args.source_repo),
-        "prepared_rows": int(len(prepared)),
+        "data_mode": "actual",
+        "result_status": "actual_data_simulation_output",
+        "scenario_day_rows": int(len(by_day)),
+        "scenario_rows": int(len(aggregate)),
         "covered_combinations": int(coverage["covered"].sum()),
         "expected_combinations": int(len(coverage)),
-        "days": sorted(prepared["day"].unique().tolist()),
-        "grid_settings": sorted(prepared["grid_setting"].unique().tolist()),
-        "sparse_handlers": sorted(prepared["sparse_handler"].unique().tolist()),
-        "solvers": sorted(prepared["solver"].unique().tolist()),
-        "lambda_values": sorted(prepared["lambda_driver_score"].unique().tolist()),
+        "days": sorted(by_day["day"].unique().tolist()),
+        "grid_settings": sorted(by_day["grid_setting"].unique().tolist()),
+        "sparse_handlers": sorted(by_day["sparse_handler"].unique().tolist()),
+        "solvers": sorted(by_day["solver"].unique().tolist()),
+        "lambda_values": sorted(by_day["lambda_driver_score"].unique().tolist()),
+        "interpretation": (
+            "Results are measured simulator outputs produced with actual input data. "
+            "Expected completion, conversion, utility, and income are model-based outcomes, "
+            "not observed production outcomes."
+        ),
     }
-    (args.results_csv / "prepare_results_manifest.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    (args.results_csv / "simulation_results_manifest.json").write_text(
+        json.dumps(summary, indent=2), encoding="utf-8"
+    )
     print(json.dumps(summary, indent=2))
     if summary["covered_combinations"] != summary["expected_combinations"]:
         raise SystemExit("Scenario coverage is incomplete. Inspect scenario_coverage_check.csv.")
@@ -220,4 +264,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

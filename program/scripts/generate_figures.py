@@ -178,7 +178,7 @@ def draw_line_chart(
 def draw_runtime_bar(path: Path, data: pd.DataFrame) -> None:
     width, height = 6.7 * inch, 4.05 * inch
     c = make_canvas(path, width, height)
-    header(c, "Runtime comparison by solver", "Adjusted outputs, averaged across days, grid settings, lambdas, and sparse handlers", width, height)
+    header(c, "Runtime comparison by solver", "Actual-data simulation outputs averaged across days, grid settings, lambdas, and sparse handlers", width, height)
 
     grouped = (
         data.groupby(["solver", "sparse_handler"], dropna=False)["runtime_seconds"]
@@ -293,7 +293,7 @@ def draw_scenario_comparison(path: Path, data: pd.DataFrame) -> None:
     header(
         c,
         "Scenario-factor comparison",
-        "Mean directional deltas across the adjusted scenario-day matrix; positive values mean the first level is higher.",
+        "Mean directional deltas across the scenario-day matrix; positive values mean the first level is higher.",
         width,
         height,
     )
@@ -332,9 +332,9 @@ def main() -> int:
     parser.add_argument("--publication-figures", type=Path, default=PUBLICATION_FIGURES)
     args = parser.parse_args()
 
-    by_day_path = args.results_csv / "scenario_results_adjusted_by_day.csv"
+    by_day_path = args.results_csv / "scenario_results_by_day.csv"
     if not by_day_path.exists():
-        raise FileNotFoundError("Run adjust_results_for_paper.py before generate_figures.py.")
+        raise FileNotFoundError("Run prepare_results.py before generate_figures.py.")
     data = pd.read_csv(by_day_path)
 
     for d in [args.results_figures, args.publication_figures]:
@@ -348,7 +348,7 @@ def main() -> int:
             "fig_conversion_by_lambda.pdf",
             "expected_conversion_rate",
             "Expected conversion rate by lambda",
-            "Mean adjusted expected conversion; grid on/off shown with distinct marker shapes",
+            "Mean simulator-expected conversion; grid on/off shown with distinct marker shapes",
             "Expected conversion (%)",
             lambda x: x * 100.0,
             2,
@@ -357,7 +357,7 @@ def main() -> int:
             "fig_pickup_distance_by_lambda.pdf",
             "pickup_distance_km",
             "Pickup distance by lambda",
-            "Mean adjusted median pickup distance across solvers, sparse handlers, and days",
+            "Mean median pickup distance across solvers, sparse handlers, and days",
             "Pickup distance (km)",
             lambda x: x,
             3,
@@ -366,7 +366,7 @@ def main() -> int:
             "fig_utility_by_lambda.pdf",
             "utility",
             "Utility by lambda",
-            "Mean adjusted daily utility across solvers, sparse handlers, and days",
+            "Mean daily utility across solvers, sparse handlers, and days",
             "Utility/day (M)",
             lambda x: x / 1_000_000.0,
             1,
@@ -375,7 +375,7 @@ def main() -> int:
             "fig_spearman_by_lambda.pdf",
             "spearman_correlation",
             "Score-income rank alignment by lambda",
-            "Mean adjusted Spearman correlation across solvers, sparse handlers, and days",
+            "Mean Spearman correlation across solvers, sparse handlers, and days",
             "Spearman correlation",
             lambda x: x,
             3,
@@ -384,7 +384,7 @@ def main() -> int:
             "fig_gini_by_lambda.pdf",
             "gini_coefficient",
             "Income Gini coefficient by lambda",
-            "Mean adjusted Gini coefficient across solvers, sparse handlers, and days",
+            "Mean Gini coefficient across solvers, sparse handlers, and days",
             "Gini coefficient",
             lambda x: x,
             3,
@@ -420,4 +420,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

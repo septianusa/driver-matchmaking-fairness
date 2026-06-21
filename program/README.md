@@ -18,7 +18,7 @@ priority is introduced into the assignment objective. The analysis compares:
 
 - `src/`: simulator source copied from the current working repository.
 - `configs/`: simulator configuration files.
-- `scripts/`: reproducible result preparation, adjustment, table, and figure scripts.
+- `scripts/`: reproducible result preparation, table, and figure scripts.
 - `data/raw/`: placeholder for private raw CSV files.
 - `data/processed/`: placeholder for local intermediate files.
 - `notebooks/`: optional exploratory notebooks.
@@ -72,7 +72,7 @@ Run the model-comparison matrix on actual data:
 python main.py compare-models-days --config configs/model_comparison_thesis_actual.yaml --data-mode actual
 ```
 
-## Regenerate Adjusted Results, Tables, and Figures
+## Regenerate Results, Tables, and Figures
 
 Run the full publication asset pipeline:
 
@@ -86,7 +86,6 @@ Equivalent step-by-step command flow:
 ```bash
 cd program
 python scripts/prepare_results.py
-python scripts/adjust_results_for_paper.py
 python scripts/generate_tables.py
 python scripts/generate_figures.py
 python scripts/build_publication_assets.py
@@ -94,25 +93,22 @@ python scripts/build_publication_assets.py
 
 ## What Each Script Does
 
-- `prepare_results.py`: reads the current experiment result CSVs from the
-  original simulator output folders, normalizes scenario columns, and checks
-  factorial coverage.
-- `adjust_results_for_paper.py`: applies controlled drafting adjustments to
-  make the experimental effects more visible for drafting while keeping the
-  magnitudes realistic.
+- `prepare_results.py`: reads the completed actual-data experiment CSVs from
+  the original simulator output folders, normalizes scenario columns, checks
+  factorial coverage, and writes daily and scenario-level result tables without
+  modifying measured values.
 - `generate_tables.py`: writes CSV table summaries to `../results/tables/` and
   LaTeX tables to `../publication/tables/`.
 - `generate_figures.py`: writes publication-ready PDF figures to
   `../results/figures/` and `../publication/figures/`.
 - `build_publication_assets.py`: runs the above scripts in order.
 
-## Important Note About Adjusted Numbers
+## Interpretation Boundary
 
-The adjusted outputs are clearly marked as `adjusted_for_paper_drafting`.
-They are derived from completed simulator outputs but are not raw production
-measurements and should not be used as causal evidence. The paper uses cautious
-wording such as "suggests", "indicates", and "is consistent with" for this
-reason.
+The comparison matrix uses actual input data and contains 224 completed
+scenario-day runs. We report these values as simulation results. Expected
+completion, conversion, utility, and driver-income metrics remain model-based
+quantities; they are not observed production outcomes or causal estimates.
 
 ## Compile the LaTeX Paper
 

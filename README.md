@@ -9,8 +9,8 @@ experiment.
   for raw actual-format data.
 - `publication/`: IEEE-style LaTeX paper, references, generated tables, and
   generated figures.
-- `results/`: adjusted CSV outputs, table summaries, figures, and validation
-  logs.
+- `results/`: measured actual-data simulation outputs, table summaries,
+  figures, and validation logs.
 
 ## Regenerate Assets
 
@@ -19,9 +19,9 @@ cd program
 python run_experiment.py all
 ```
 
-The pipeline reads the current simulator comparison outputs, normalizes all
-scenario-day rows, applies controlled paper-drafting adjustments, and regenerates
-the paper tables and figures.
+The pipeline reads the completed actual-data comparison runs, normalizes all
+scenario-day rows without changing measured values, and regenerates the paper
+tables and figures.
 
 ## Compile Paper
 
@@ -38,3 +38,10 @@ bibtex main
 pdflatex main.tex
 pdflatex main.tex
 ```
+
+## Interpretation Boundary
+
+The results are outputs of simulations run with actual input data. They support
+comparisons within the stated simulator, dates, and configuration matrix. Model-
+based quantities such as expected conversion, utility, and simulated driver
+income are not observed production outcomes and are not interpreted causally.
