@@ -38,9 +38,3 @@ bibtex main
 pdflatex main.tex
 pdflatex main.tex
 ```
-
-## Important Note
-
-The result files under `results/` are adjusted experiment outputs for paper
-drafting. They are derived from completed simulator runs, but they are not raw
-production measurements and should not be presented as causal evidence.
