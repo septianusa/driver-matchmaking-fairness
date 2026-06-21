@@ -1,0 +1,49 @@
+comparison:
+  enabled: true
+  data_mode: actual
+  run_label: no_grid
+
+  lambda_driver_score_values: [0.0, 0.1, 0.2, 0.3]
+
+  matching_algorithms: [hungarian]
+
+  sparse_methods: [bfs_h3, a2gat]
+
+  repeats: 1
+  warmup_runs: 0
+  random_seed: 42
+  measure_memory: true
+  measure_cpu: true
+  output_directory: outputs/comparison_no_grid
+
+matching:
+  auction:
+    enabled: true
+    epsilon: 0.001
+    max_iterations: 1000000
+
+sparse:
+  a2gat:
+    anchor_hops: 4
+    anchor_top_k: 8
+    candidate_driver_target: 30
+    distance_weight: 1.0
+    driver_score_weight: 0.15
+
+utility:
+  gamma_grid_value: 0.0
+  alpha_grid_learning_rate: 0.0
+
+grid_values:
+  cold_start_value: 0.0
+  update_mode: none
+
+data:
+  mode: actual
+
+  actual:
+    simulation_date: "2025-04-23"
+    orders_path: thesis-data-research/orders.csv
+    driver_locations_path: thesis-data-research/driver_locations.csv
+    driver_scores_path: thesis-data-research/driver_scores.csv
+    grid_values_path: null

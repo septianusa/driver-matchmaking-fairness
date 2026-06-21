@@ -1,0 +1,371 @@
+random_seed: 20260620
+study_area_name: Surabaya, Indonesia
+timezone: Asia/Jakarta
+simulation_start_date: "2026-06-01"
+number_of_days: 7
+number_of_drivers: 2875
+daily_order_target: 11283
+minimum_daily_orders: 9000
+target_daily_order_min: 9000
+target_daily_order_max: 13250
+daily_order_profile_factors: [1.15, 0.82, 0.98, 0.91, 1.05, 1.13, 0.97]
+daily_order_noise_std: 0.012
+active_driver_target_min: 2050
+active_driver_target_max: 2350
+h3_resolution: 8
+cold_start_grid_value: 1.0
+dynamic_grid_values: true
+maximum_online_hours_per_day: 8
+minimum_session_minutes: 120
+maximum_session_minutes: 480
+
+study_boundary:
+  latitude_min: -7.375
+  latitude_max: -7.180
+  longitude_min: 112.600
+  longitude_max: 112.850
+  buffer_km: 2.0
+
+output:
+  data_dir: data/generated
+  sample_dir: data/sample
+  report_dir: reports
+  format: parquet
+  partition_by_date: true
+  sample_rows: 5000
+
+scales:
+  small:
+    number_of_days: 2
+    number_of_drivers: 120
+    daily_order_target: 360
+    minimum_daily_orders: 250
+    target_daily_order_min: 250
+    target_daily_order_max: 450
+    daily_order_profile_factors: [1.00, 0.92]
+    active_driver_target_min: 60
+    active_driver_target_max: 115
+    poi_count_scale: 0.20
+    dynamic_grid_values: true
+  full:
+    number_of_days: 7
+    number_of_drivers: 2875
+    daily_order_target: 11283
+    minimum_daily_orders: 9000
+    target_daily_order_min: 9000
+    target_daily_order_max: 13250
+    daily_order_profile_factors: [1.15, 0.82, 0.98, 0.91, 1.05, 1.13, 0.97]
+    active_driver_target_min: 2050
+    active_driver_target_max: 2350
+    poi_count_scale: 1.0
+    dynamic_grid_values: true
+
+time_period_definitions:
+  graveyard:
+    start_minute: 0
+    end_minute: 359
+  morning_peak:
+    start_minute: 360
+    end_minute: 539
+  daytime_off_peak:
+    start_minute: 540
+    end_minute: 959
+  evening_peak:
+    start_minute: 960
+    end_minute: 1139
+  evening_off_peak:
+    start_minute: 1140
+    end_minute: 1319
+  late_evening:
+    start_minute: 1320
+    end_minute: 1439
+
+weekday_demand_profile:
+  graveyard: 0.30
+  morning_peak: 2.20
+  daytime_off_peak: 1.00
+  evening_peak: 2.00
+  evening_off_peak: 1.10
+  late_evening: 0.55
+
+weekend_demand_profile:
+  graveyard: 0.35
+  morning_peak: 0.80
+  daytime_off_peak: 1.35
+  evening_peak: 1.75
+  evening_off_peak: 1.45
+  late_evening: 0.75
+
+od_probability_matrices:
+  weekday:
+    morning_peak:
+      origin:
+        residential: 0.62
+        transport_hub: 0.10
+        restaurant_or_food_area: 0.07
+        market: 0.06
+        school: 0.05
+        university: 0.05
+        office: 0.05
+      destination:
+        office: 0.34
+        school: 0.20
+        university: 0.16
+        transport_hub: 0.10
+        hospital: 0.07
+        market: 0.06
+        restaurant_or_food_area: 0.04
+        shopping_mall: 0.03
+    daytime_off_peak:
+      origin:
+        office: 0.20
+        market: 0.16
+        hospital: 0.12
+        residential: 0.18
+        restaurant_or_food_area: 0.14
+        university: 0.10
+        shopping_mall: 0.10
+      destination:
+        office: 0.18
+        market: 0.16
+        hospital: 0.12
+        residential: 0.20
+        restaurant_or_food_area: 0.14
+        university: 0.10
+        shopping_mall: 0.10
+    evening_peak:
+      origin:
+        office: 0.35
+        school: 0.12
+        university: 0.12
+        shopping_mall: 0.10
+        restaurant_or_food_area: 0.10
+        transport_hub: 0.09
+        market: 0.07
+        hospital: 0.05
+      destination:
+        residential: 0.58
+        restaurant_or_food_area: 0.12
+        shopping_mall: 0.10
+        transport_hub: 0.08
+        market: 0.06
+        hospital: 0.06
+    evening_off_peak:
+      origin:
+        shopping_mall: 0.22
+        restaurant_or_food_area: 0.24
+        office: 0.16
+        residential: 0.16
+        market: 0.10
+        transport_hub: 0.08
+        hospital: 0.04
+      destination:
+        residential: 0.50
+        restaurant_or_food_area: 0.18
+        shopping_mall: 0.12
+        transport_hub: 0.10
+        market: 0.06
+        hospital: 0.04
+    graveyard:
+      origin:
+        residential: 0.35
+        hospital: 0.18
+        transport_hub: 0.18
+        restaurant_or_food_area: 0.16
+        office: 0.07
+        market: 0.06
+      destination:
+        residential: 0.36
+        hospital: 0.18
+        transport_hub: 0.18
+        restaurant_or_food_area: 0.16
+        office: 0.06
+        market: 0.06
+    late_evening:
+      origin:
+        restaurant_or_food_area: 0.26
+        shopping_mall: 0.20
+        transport_hub: 0.18
+        residential: 0.16
+        hospital: 0.10
+        office: 0.10
+      destination:
+        residential: 0.52
+        transport_hub: 0.18
+        hospital: 0.10
+        restaurant_or_food_area: 0.10
+        shopping_mall: 0.06
+        office: 0.04
+  weekend:
+    morning_peak:
+      origin:
+        residential: 0.46
+        market: 0.14
+        restaurant_or_food_area: 0.12
+        transport_hub: 0.10
+        hospital: 0.08
+        recreation: 0.05
+        shopping_mall: 0.05
+      destination:
+        market: 0.23
+        shopping_mall: 0.19
+        recreation: 0.16
+        restaurant_or_food_area: 0.16
+        transport_hub: 0.12
+        hospital: 0.08
+        residential: 0.06
+    daytime_off_peak:
+      origin:
+        residential: 0.34
+        shopping_mall: 0.17
+        market: 0.16
+        recreation: 0.13
+        restaurant_or_food_area: 0.12
+        transport_hub: 0.08
+      destination:
+        shopping_mall: 0.22
+        recreation: 0.18
+        market: 0.17
+        restaurant_or_food_area: 0.16
+        residential: 0.17
+        transport_hub: 0.10
+    evening_peak:
+      origin:
+        shopping_mall: 0.25
+        recreation: 0.20
+        restaurant_or_food_area: 0.20
+        market: 0.12
+        transport_hub: 0.10
+        residential: 0.08
+        hospital: 0.05
+      destination:
+        residential: 0.48
+        restaurant_or_food_area: 0.16
+        transport_hub: 0.13
+        shopping_mall: 0.10
+        recreation: 0.08
+        hospital: 0.05
+    evening_off_peak:
+      origin:
+        restaurant_or_food_area: 0.28
+        shopping_mall: 0.23
+        recreation: 0.17
+        transport_hub: 0.12
+        residential: 0.12
+        hospital: 0.08
+      destination:
+        residential: 0.55
+        transport_hub: 0.16
+        restaurant_or_food_area: 0.12
+        shopping_mall: 0.08
+        hospital: 0.05
+        recreation: 0.04
+    graveyard:
+      origin:
+        residential: 0.30
+        transport_hub: 0.22
+        hospital: 0.18
+        restaurant_or_food_area: 0.16
+        recreation: 0.08
+        shopping_mall: 0.06
+      destination:
+        residential: 0.38
+        transport_hub: 0.22
+        hospital: 0.17
+        restaurant_or_food_area: 0.13
+        recreation: 0.06
+        shopping_mall: 0.04
+    late_evening:
+      origin:
+        restaurant_or_food_area: 0.30
+        shopping_mall: 0.20
+        recreation: 0.18
+        transport_hub: 0.14
+        residential: 0.10
+        hospital: 0.08
+      destination:
+        residential: 0.56
+        transport_hub: 0.16
+        restaurant_or_food_area: 0.12
+        hospital: 0.06
+        recreation: 0.05
+        shopping_mall: 0.05
+
+minimum_trip_distance_km: 0.35
+maximum_trip_distance_km: 18.0
+distance_preference_median_km: 2.4
+distance_preference_sigma: 0.86
+long_trip_probability: 0.14
+coordinate_jitter_meters: 150
+network_distance_factor_mean: 1.40
+network_distance_factor_std: 0.00
+
+traffic_speed_factors:
+  graveyard:
+    base_speed_kph: 34
+    factor: 1.15
+  morning_peak:
+    base_speed_kph: 24
+    factor: 0.82
+  daytime_off_peak:
+    base_speed_kph: 28
+    factor: 1.00
+  evening_peak:
+    base_speed_kph: 22
+    factor: 0.78
+  evening_off_peak:
+    base_speed_kph: 27
+    factor: 0.95
+  late_evening:
+    base_speed_kph: 31
+    factor: 1.08
+
+weather_probabilities:
+  clear: 0.72
+  light_rain: 0.20
+  heavy_rain: 0.08
+
+weather_speed_factor:
+  clear: 1.00
+  light_rain: 0.90
+  heavy_rain: 0.78
+
+weather_multiplier:
+  clear: 1.00
+  light_rain: 1.05
+  heavy_rain: 1.12
+
+fare_parameters:
+  fare_distance_multiplier: 1.40
+  distance_rate_per_km_min: 1850
+  distance_rate_per_km_max: 2300
+  minimum_fare: 10000
+
+surge_parameters:
+  base: 1.0
+  demand_weight: 0.16
+  weather_weight: 0.08
+  maximum_surge: 1.8
+
+road_network:
+  use_osm_if_available: false
+  cache_path: data/raw_reference/osm_surabaya.graphml
+  offline_grid_rows: 18
+  offline_grid_cols: 22
+  maximum_speed_kph: 60
+
+driver_score_targets:
+  high: 0.42
+  medium: 0.36
+  low: 0.22
+  tolerance: 0.05
+
+driver_participation:
+  base_probability: 0.75
+  high_score_bonus: 0.05
+  low_score_penalty: 0.04
+  two_session_probability: 0.28
+  high_online_minutes_mean: 465
+  medium_online_minutes_mean: 445
+  low_online_minutes_mean: 410
+  online_minutes_std: 45

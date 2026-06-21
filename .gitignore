@@ -1,14 +1,29 @@
 __pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 .venv/
-.DS_Store
-.vscode/
+venv/
 
-*.csv
-*.parquet
-*.xlsx
+# Private local data. Keep placeholders and docs.
+program/data/raw/*.csv
+program/data/processed/*
+!program/data/processed/README.md
+program/data/dummy/*.csv
+program/outputs/
+simulation_data_generation/data/generated/
+simulation_data_generation/reports/
 
-*.png
-*.jpg
-*.jpeg
-*.html
+# LaTeX build artifacts.
+publication/*.aux
+publication/*.bbl
+publication/*.blg
+publication/*.fdb_latexmk
+publication/*.fls
+publication/*.log
+publication/*.out
+publication/*.synctex.gz
+
+# Local archives.
+*.zip

@@ -1,0 +1,17 @@
+# Generated data can be large. Keep only placeholders and small samples in Git.
+data/generated/*
+!data/generated/.gitkeep
+data/generated_small_check/*
+reports/figures/*
+!reports/figures/.gitkeep
+reports/validation_summary.md
+*.pyc
+__pycache__/
+.pytest_cache/
+.pytest_tmp/
+.mypy_cache/
+.ruff_cache/
+.venv/
+dist/
+build/
+*.egg-info/

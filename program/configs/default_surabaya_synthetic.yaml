@@ -1,0 +1,81 @@
+simulation:
+  simulation_date: "2026-06-01"
+  total_batches: 1440
+  batch_duration_minutes: 1
+  timezone: Asia/Jakarta
+  random_seed: 42
+  cancellation_realization_mode: expected_value
+  enable_candidate_edge_logging: false
+
+data:
+  source: file
+  orders:
+    path: data/raw/orders.csv
+    date_column: jakarta_data_date
+    batch_column: batch_step
+  driver_locations:
+    path: data/raw/driver_locations.csv
+    date_column: jakarta_data_date
+    batch_column: bucket_step
+  driver_scores:
+    path: data/raw/driver_scores.csv
+    date_column: jakarta_period_date
+    score_column: calculated_performance_score
+  grid_values:
+    path: data/raw/grid_values.csv
+
+data_quality:
+  driver_location_duplicate_strategy: aggregate_mean
+  invalid_value_policy: raise_error
+
+driver_scores:
+  score_mode: provided_score
+  missing_score_policy: median_imputation
+  default_score: 0.5
+
+spatial:
+  h3_resolution: 8
+  maximum_pickup_distance_km: 5.0
+  max_h3_hops: 4
+  candidate_driver_target: 30
+
+orders:
+  carry_over_batches: 5
+
+drivers:
+  positioning_mode: historical_bootstrap_simulated_state
+  refresh_historical_position_before_first_simulated_assignment: true
+  enforce_maximum_active_minutes: false
+  maximum_active_minutes: 480
+  enable_idle_random_walk: true
+  idle_random_walk_interval_batches: 5
+
+eta:
+  source: calculated
+  assumed_pickup_speed_km_per_hour: 20.0
+  assumed_trip_speed_km_per_hour: 20.0
+  trip_buffer_minutes: 3
+  minimum_pickup_eta_minutes: 1
+  minimum_trip_eta_minutes: 1
+
+cancellation_model:
+  mode: score_distance
+  beta_0: -2.0
+  beta_1_score_gap: 2.0
+  beta_2_pickup_distance: 2.0
+
+utility:
+  lambda_driver_score: 0.0
+  gamma_grid_value: 0.9
+  alpha_grid_learning_rate: 0.1
+
+grid_values:
+  cold_start_value: 1.0
+  update_mode: sequential_td
+
+matching:
+  strategy: hungarian
+  deterministic_tie_breaking: true
+
+output:
+  base_directory: outputs

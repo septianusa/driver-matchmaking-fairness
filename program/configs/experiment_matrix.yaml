@@ -1,0 +1,23 @@
+base_config: configs/default.yaml
+scenarios:
+  baseline:
+    utility:
+      lambda_driver_score: 0.0
+    matching:
+      strategy: hungarian
+  behavior_weighted:
+    utility:
+      lambda_driver_score: 0.6
+    matching:
+      strategy: hungarian
+  behavior_grid_weighted:
+    utility:
+      lambda_driver_score: 0.6
+      gamma_grid_value: 1.1
+    grid_values:
+      update_mode: sequential_td
+parameter_grid:
+  utility.lambda_driver_score: [0.0, 0.3, 0.6, 1.0]
+  spatial.maximum_pickup_distance_km: [3.0, 5.0]
+  cancellation_model.beta_1_score_gap: [1.0, 2.0]
+

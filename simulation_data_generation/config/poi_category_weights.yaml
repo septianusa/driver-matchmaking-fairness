@@ -1,0 +1,24 @@
+poi_category_weights:
+  school: 0.10
+  university: 0.09
+  office: 0.13
+  market: 0.10
+  shopping_mall: 0.10
+  hospital: 0.06
+  transport_hub: 0.08
+  residential: 0.22
+  restaurant_or_food_area: 0.08
+  recreation: 0.04
+
+poi_counts_default:
+  school: 70
+  university: 45
+  office: 90
+  market: 55
+  shopping_mall: 45
+  hospital: 35
+  transport_hub: 30
+  residential: 120
+  restaurant_or_food_area: 75
+  recreation: 35
+

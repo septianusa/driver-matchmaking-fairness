@@ -1,0 +1,2 @@
+"""Sparse candidate provider adapters."""
+

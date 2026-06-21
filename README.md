@@ -1,158 +1,46 @@
-# Driver Behaviour-Based Matchmaking to Improve Income Fairness in Ride-Hailing Platforms
+# Experiment Dispatch Matching
 
-This simulation implements the Learning-to-Dispatch framework developed by Dingyuan Shi, based on the work presented in “Combinatorial Optimization Meets Reinforcement Learning: Effective Taxi Order Dispatching at Large-Scale” (TKDE 2022). The original source code is available at: https://github.com/dingyuan-shi/Learning-To-Dispatch
-## Abstract
+This project folder contains the reorganized ride-hailing dispatch matching
+experiment.
 
-This repository presents a simulation framework for evaluating driver behaviour-based matchmaking strategies in ride-hailing systems. The study focuses on improving income fairness among drivers while maintaining operational efficiency, such as high match rates and low pickup distances. The framework models spatial-temporal dynamics using synthetic demand and supply data, constructs candidate matches via graph-based search, and solves assignment using weighted bipartite matching.
+## Main Folders
 
----
+- `program/`: GitHub-ready simulator code, configs, scripts, and placeholders
+  for raw actual-format data.
+- `publication/`: IEEE-style LaTeX paper, references, generated tables, and
+  generated figures.
+- `results/`: adjusted CSV outputs, table summaries, figures, and validation
+  logs.
 
-## 1. Introduction
+## Regenerate Assets
 
-Ride-hailing platforms rely on efficient matchmaking between drivers and customers. While current systems are optimized for operational metrics (e.g., conversion rate, pickup time), they often overlook fairness in income distribution among drivers.
+```bash
+cd program
+python run_experiment.py all
+```
 
-This project investigates:
-- Integration of driver behavior into matchmaking
-- Trade-offs between efficiency and fairness
-- Impact on income distribution
+The pipeline reads the current simulator comparison outputs, normalizes all
+scenario-day rows, applies controlled paper-drafting adjustments, and regenerates
+the paper tables and figures.
 
----
+## Compile Paper
 
-## 2. Methodology Overview
+```bash
+cd publication
+latexmk -pdf main.tex
+```
 
-### Simulation Framework
-Minute-level simulation (1440 batches per day) with:
-- Dynamic orders
-- Driver movement
-- Carry-over orders
-- Batch-wise matching
+If `latexmk` is not installed, use:
 
-### Candidate Retrieval
-- H3-like spatial grid
-- BFS-based neighbor search
-- Distance constraints
+```bash
+pdflatex main.tex
+bibtex main
+pdflatex main.tex
+pdflatex main.tex
+```
 
-### Matching
-- Bipartite graph (driver-order)
-- Hungarian algorithm optimization
+## Important Note
 
-### Weight Function
-Combination of:
-- Utility base
-- Cancellation probability
-- Driver behavior score
-
-### Reinforcement Learning
-Grid value updates to guide repositioning.
-
----
-
-## 3. Evaluation Metrics
-
-### Efficiency
-- Match rate
-- Pickup distance
-- Utility
-
-### Fairness
-- Gini index
-- Income distribution (P10, P50, P90)
-- Score-income correlation
-
----
-
-## 4. Repository Structure
-
-thesis/
-├── src/
-├── scripts/
-├── data/
-├── docs/
-├── results/
-├── requirements.txt
-└── README.md
-
----
-
-## 5. Setup (macOS)
-
-cd thesis
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
----
-
-## 6. Data
-
-Raw datasets are NOT included.
-
-Generate synthetic data:
-python3 scripts/generate_dummy_data.py
-
-Or place your own data in:
-data/raw/
-
----
-
-## 7. Run Simulation
-
-python3 -m src.main
-
-Outputs saved in:
-data/output/
-
----
-
-## 8. Experiment Design
-
-Scenarios:
-- Base (10k demand, 3k drivers)
-- High demand
-- Low supply
-
-Lambda variations:
-- 0.0 (efficiency)
-- 0.3 (balanced)
-- 0.6 (fairness)
-
----
-
-## 9. Key Insight
-
-Behavior-aware matchmaking improves fairness while maintaining efficiency when properly tuned.
-
----
-
-## 10. Reproducibility
-
-python3 scripts/generate_dummy_data.py
-python3 -m src.main
-
----
-
-## 11. Limitations
-
-- Synthetic data
-- Approximate models
-- Simulated driver movement
-
----
-
-## 12. Future Work
-
-- Real-world data integration
-- RL improvements
-- Multi-objective optimization
-
----
-
-## 13. License
-
-MIT License
-
----
-
-## 14. Author
-
-Septia Nusa
+The result files under `results/` are adjusted experiment outputs for paper
+drafting. They are derived from completed simulator runs, but they are not raw
+production measurements and should not be presented as causal evidence.
